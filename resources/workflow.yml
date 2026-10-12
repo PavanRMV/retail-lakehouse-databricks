@@ -1,0 +1,38 @@
+resources:
+  jobs:
+    retail_lakehouse_job:
+      name: retail-lakehouse-${bundle.target}
+      max_concurrent_runs: 1
+      parameters:
+        - {name: catalog, default: '${var.catalog}'}
+        - {name: schema, default: '${var.schema}'}
+        - {name: source_path, default: '${var.source_path}'}
+        - {name: schema_root, default: '${var.schema_root}'}
+        - {name: checkpoint_root, default: '${var.checkpoint_root}'}
+      tasks:
+        - task_key: bronze_ingest
+          spark_python_task: {python_file: '${workspace.file_path}/src/databricks/bronze.py', parameters: ['--catalog','${var.catalog}','--schema','${var.schema}','--source-path','${var.source_path}','--schema-root','${var.schema_root}','--checkpoint-root','${var.checkpoint_root}']}
+          job_cluster_key: lakehouse_cluster
+          timeout_seconds: 1800
+          max_retries: 2
+        - task_key: silver_transform
+          depends_on: [{task_key: bronze_ingest}]
+          spark_python_task: {python_file: '${workspace.file_path}/src/databricks/silver.py', parameters: ['--catalog','${var.catalog}','--schema','${var.schema}']}
+          job_cluster_key: lakehouse_cluster
+          timeout_seconds: 1800
+          max_retries: 1
+        - task_key: quality_gate
+          depends_on: [{task_key: silver_transform}]
+          spark_python_task: {python_file: '${workspace.file_path}/src/databricks/quality_gate.py', parameters: ['--catalog','${var.catalog}','--schema','${var.schema}','--quarantine-threshold','0','--unknown-review-threshold','1486']}
+          job_cluster_key: lakehouse_cluster
+          timeout_seconds: 900
+          max_retries: 0
+        - task_key: gold_marts
+          depends_on: [{task_key: quality_gate}]
+          spark_python_task: {python_file: '${workspace.file_path}/src/databricks/gold.py', parameters: ['--catalog','${var.catalog}','--schema','${var.schema}']}
+          job_cluster_key: lakehouse_cluster
+          timeout_seconds: 1800
+          max_retries: 1
+      job_clusters:
+        - job_cluster_key: lakehouse_cluster
+          new_cluster: {spark_version: 15.4.x-scala2.12, node_type_id: Standard_D4ds_v5, num_workers: 2, data_security_mode: SINGLE_USER}

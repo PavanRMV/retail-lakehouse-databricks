@@ -1,0 +1,13 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --dev
+      - name: generate_fixture and run end-to-end fixture
+        run: uv run pytest tests/test_pipeline.py::test_fixture_pipeline -q
+      - name: unit and structural contracts (full data is local evidence only)
+        run: uv run pytest -q

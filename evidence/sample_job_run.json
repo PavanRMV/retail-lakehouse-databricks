@@ -1,0 +1,17 @@
+{
+  "engine": "local-duckdb-reference",
+  "status": "SUCCEEDED",
+  "source_rows": 541909,
+  "accepted_rows": 541909,
+  "quarantine_rows": 0,
+  "rescued_rows": 0,
+  "duplicate_source_identity": 0,
+  "unknown_review_rows": 1486,
+  "accounting_balanced": true,
+  "rerun_audit_records": 1,
+  "gold_marts": 8,
+  "cancellation_mart_rows": 1936,
+  "source_max_epoch_seconds": 1323435000,
+  "databricks_job_run": false,
+  "note": "Full-data local evidence only; no live Databricks workspace execution, grants, or runtime parity claimed."
+}

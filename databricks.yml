@@ -1,0 +1,40 @@
+bundle:
+  name: retail-lakehouse-databricks
+include:
+  - resources/*.yml
+variables:
+  catalog:
+    description: Unity Catalog target catalog
+  schema:
+    description: Lakehouse schema
+    default: retail
+  source_path:
+    description: Environment-scoped CSV landing Volume
+  schema_root:
+    description: Environment-scoped Auto Loader schema-state Volume
+  checkpoint_root:
+    description: Environment-scoped Auto Loader checkpoint Volume
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      catalog: retail_dev
+      schema: retail
+      source_path: /Volumes/retail_dev/retail/landing/online_retail
+      schema_root: /Volumes/retail_dev/retail/schema_state
+      checkpoint_root: /Volumes/retail_dev/retail/checkpoints
+    workspace:
+      root_path: '/Workspace/Shared/.bundle/${bundle.name}/${bundle.target}'
+  prod:
+    mode: production
+    variables:
+      catalog: retail_prod
+      schema: retail
+      source_path: /Volumes/retail_prod/retail/landing/online_retail
+      schema_root: /Volumes/retail_prod/retail/schema_state
+      checkpoint_root: /Volumes/retail_prod/retail/checkpoints
+    workspace:
+      root_path: '/Workspace/Shared/.bundle/${bundle.name}/${bundle.target}'
+# Provision landing, schema_state, and checkpoints with sql/unity_catalog.sql
+# before the job; each target binds them to a distinct catalog.

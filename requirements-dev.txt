@@ -1,0 +1,5 @@
+duckdb
+pandas
+pytest
+pyyaml
+sqlglot==30.22.0

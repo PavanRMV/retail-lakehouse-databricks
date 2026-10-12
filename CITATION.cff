@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: Retail Lakehouse on Databricks
+type: software
+version: 0.1.0
+license: MIT
+message: Cite the dataset as Chen, D. (2015), Online Retail, UCI ML Repository, DOI 10.24432/C5BW33.
+references:
+  - type: dataset
+    title: Online Retail
+    doi: 10.24432/C5BW33

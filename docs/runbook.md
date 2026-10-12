@@ -1,0 +1,11 @@
+# Runbook
+1. Review principals, then run `sql/unity_catalog.sql` with explicit environment catalog/schema bindings. It provisions the isolated `landing`, `schema_state`, and `checkpoints` Volumes; the template has not been applied here.
+2. Run `python scripts/acquire_data.py` locally to verify the pinned ZIP and exact XLSX member and emit `data/input/online_retail.csv` with identifiers preserved as text. Upload that immutable CSV under the environment's landing Volume; never overwrite an observed path.
+3. Validate/deploy the bundle for `dev` or `prod`. Their catalogs and Volume paths are separate. Bundle-synced Python resources use `${workspace.file_path}`, not the caller's working directory.
+4. Bronze uses bounded Auto Loader `binaryFile` ingestion with `availableNow`, durable schema/checkpoints, deterministic `posexplode` line positions, rescued content, and file metadata. This is incremental file ingestion, not CDC.
+5. Silver quarantines invalid typed/rescued rows and deduplicates only file-plus-physical-line identity. Its MERGE source is unique on `transaction_key`.
+6. The gate fails closed on row imbalance, rescued content, quarantine above the explicit default-zero threshold, duplicate source identity, or unknown-review above threshold. It also persists `source_max_epoch_seconds` from the maximum Silver invoice timestamp. Inspect `dq_metrics`, `run_control`, and `silver_quarantine`. A success record is written only after all checks pass. Workflow tasks have explicit timeouts/retries; the deterministic quality gate has `max_retries: 0` so bad data is not retried pointlessly.
+7. Gold replaces all eight marts from canonical Silver/DQ state, so reruns do not add counts. Cancellation exposure is exactly one row per merchandise `StockCode`. Exclude `is_partial_month=true` for completed-month trends; RFM/cohorts use purchase lines only. RFM segments are deterministic: CHAMPION (monetary ≥ 2000 and frequency ≥ 5), LOYAL (frequency ≥ 3), else DEVELOPING.
+8. Recovery: retain checkpoints/table history, correct or supersede the immutable source under a new path, rerun from the failed task, and compare run-control counts. Never delete checkpoints to force success.
+
+No live Databricks deployment, grant, or runtime validation is claimed in this repository.
